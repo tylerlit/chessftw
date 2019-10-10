@@ -1,4 +1,4 @@
-EMPTY = "_"
+EMPTY = " "
 
 WHITE_PAWN = "P"
 WHITE_KNIGHT = "N"

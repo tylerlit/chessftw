@@ -1,11 +1,11 @@
-import constants
-import helpers
+from constants import *
+from helpers import *
 
 class Board:
-    board = [[constants.EMPTY for i in range(8)] for i in range(8)]
+    board = [[EMPTY for i in range(8)] for i in range(8)]
 
     def __init__(self):
-        helpers.initializeBoard(self.board)
+        initializeBoard(self.board)
 
     def getBoardString(self):
         retStr = ""
@@ -15,4 +15,9 @@ class Board:
             retStr = retStr + "\n"
         return retStr
 
-    #def makeMove(self, color, move):
+    def movePiece(self, _piece, _from, _to):
+        #make the previous space blank
+        self.board[_from["FILE"]][_from["RANK"]] = EMPTY
+
+        #fill the new spot with the given piece
+        self.board[_to["FILE"]][_to["RANK"]] = _piece
