@@ -40,7 +40,7 @@ def initializeBoard(_board):
     _board[FILE_H][RANK_7] = BLACK_PAWN
 
     #empty pieces
-    for i in range(8):
+    for i in range(BOARD_SIZE):
         for j in range(RANK_3, RANK_7):
             _board[i][j] = EMPTY
 

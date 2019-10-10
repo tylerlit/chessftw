@@ -1,5 +1,7 @@
 EMPTY = " "
 
+BOARD_SIZE = 8
+
 WHITE_PAWN = "P"
 WHITE_KNIGHT = "N"
 WHITE_BISHOP = "B"
