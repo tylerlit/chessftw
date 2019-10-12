@@ -1,42 +1,38 @@
 import pyscreenshot as ig
 import uuid
-import mysql.connector
-from mysql.connector import Error
-
-
-def insertBLOB(photo):
-    print("Inserting BLOB into python_employee table")
-    try:
-        connection = mysql.connector.connect(host='chessftw.c51fcxedep9m.us-east-1.rds.amazonaws.com',
-                                             database='chess',
-                                             user='chessadmin',
-                                             password='chesspassword')
-
-        cursor = connection.cursor()
-        sql_insert_blob_query = """ INSERT INTO image
-                          (image) VALUES (%s,%s)"""
-
-        # Convert data into tuple format
-        insert_blob_tuple = ("DEFAULT",photo)
-        result = cursor.execute(sql_insert_blob_query, insert_blob_tuple)
-        connection.commit()
-        print("Image and file inserted successfully as a BLOB into python_employee table", result)
-
-    except mysql.connector.Error as error:
-        print("Failed inserting BLOB data into MySQL table {}".format(error))
-
-    finally:
-        if (connection.is_connected()):
-            cursor.close()
-            connection.close()
-            print("MySQL connection is closed")
-
+import sql.mysqlutil as db
+import cv.board.helpers as helpers
 
 if __name__ == "__main__":
+	#random file name
+	savePath = str(uuid.uuid4()) + ".png"
+
+	#open db connection
+	mydb = db.dbConnection()
+	mydb.openConnection()
+
+	#get screenshopt and save temporarily
 	img = ig.grab()
-	img.save(str(uuid.uuid4()) + ".png")
+	img.save(savePath)
 
-	insertBLOB(img)
-	
+	#read the image file as binary
+	binaryData = helpers.convertToBinaryData(savePath)
 
-#img.show()
+	#insert into the database
+	mydb.insert("""INSERT INTO chess.image
+				(id,image) VALUES (%s,%s)""", ("DEFAULT",binaryData))
+
+	#retrieve image from db and write to file
+	results = mydb.select("""SELECT id,image FROM chess.image
+							ORDER BY id DESC LIMIT 1""")
+
+	for row in results:
+		fileName = "TEST_" + str(row[0]) + ".png"
+		image = row[1]
+		helpers.write_file(image,"cv\\board\\temp\\" + fileName)
+
+	#close the connection
+	mydb.closeConnection()
+
+	#delete the original image file
+	helpers.delete_file(savePath)

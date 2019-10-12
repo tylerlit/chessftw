@@ -1,6 +1,9 @@
+DROP TABLE IF EXISTS chess.image;
+DROP TABLE IF EXISTS chess.piece;
+
 CREATE TABLE IF NOT EXISTS chess.image (
 	id	INT auto_increment NOT NULL,
-    image	BLOB NOT NULL,
+    image	LONGBLOB NOT NULL,
     PRIMARY KEY(id)
 );
 
@@ -13,5 +16,5 @@ CREATE TABLE IF NOT EXISTS chess.piece (
     size_y double not null,
     piece varchar(10),
     primary key(id),
-    foreign key(image_id) references chess.image
+    foreign key(image_id) references chess.image(id)
 );
