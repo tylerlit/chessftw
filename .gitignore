@@ -127,3 +127,6 @@ dmypy.json
 *.png
 
 .vscode/
+
+Pipfile
+Pipfile.lock
