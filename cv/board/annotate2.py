@@ -78,7 +78,7 @@ def getBoard(image, og, cropxy, size):
 
 
 # get all files in current directory (cv\board\)
-files = [f for f in os.listdir('.') if os.path.isfile(f)]
+files = [f for f in os.listdir('./cv/board/temp') if os.path.isfile(f)]
 
 # get all screenshots from current dir
 images = [i for i in files if (i[-4:] == ".png")]
