@@ -24,7 +24,7 @@ def upload_file(file_name, bucket, object_name=None):
                                 aws_access_key_id = __AWS_ACCESS_KEY_ID__,
                                 aws_secret_access_key= __AWS_SECRET_ACCESS_KEY__)
     try:
-        response = s3_client.upload_file(file_name, bucket, object_name)
+        s3_client.upload_file(file_name, bucket, object_name)
 
     except ClientError as e:
         print(e.response)
