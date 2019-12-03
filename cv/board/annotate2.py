@@ -12,6 +12,8 @@ from PIL import Image
 from matplotlib import pyplot as plt
 import numpy as np
 import tkinter as tk
+from sql import mysqlutil as db
+from s3 import S3_utils
 
 # UI class for annotating pieces
 class Piece(tk.Frame):
@@ -73,6 +75,29 @@ def getBoard(image, og, cropxy, size):
 
 # In[2]:
 # get all files in current directory (cv\board\)
+# query database for image paths that have not been annotated
+__MAX_RETURN_ROWS__ = 50
+mydb = db.dbConnection()
+mydb.openConnection()
+
+results = mydb.select("""SELECT
+                            Filepath 
+                        FROM 
+                            chess.board
+                        WHERE
+                            locked <> 1 AND
+                            IsAnnotated <> 1
+                        ORDER BY
+                            ID
+                        LIMIT %s     """,(__MAX_RETURN_ROWS__))
+
+# get reultset into a numpy array
+paths = np.fromiter(results)
+
+#use that array to get the actual files from S3
+for path in paths:
+    S3_utils.download_file('chessftw',path,'./cv/board/temp/' + path)
+
 files = [f for f in os.listdir('./cv/board/temp') if os.path.isfile(f)]
 
 # get all screenshots from current dir

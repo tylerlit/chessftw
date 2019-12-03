@@ -1,5 +1,6 @@
 import pyscreenshot as ig
 import uuid
+import os
 import sys
 from s3 import S3_utils
 from sql import mysqlutil as db
@@ -27,5 +28,10 @@ if __name__ == "__main__":
 
 	mydb.insert("""INSERT INTO chess.board
 				(ID,Filepath) VALUES (%s,%s)""", ("DEFAULT",S3objectName))
+
+	#clean up, close connection, delete the image file
+	mydb.closeConnection()
+	os.remove(savePath)
+
 	
 
