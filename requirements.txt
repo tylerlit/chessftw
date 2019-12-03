@@ -1,5 +1,0 @@
-opencv-python *
-pyscreenshot *
-mysql.connector *
-threadsafe-tkinter *
-matplotlib *
