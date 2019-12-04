@@ -11,6 +11,8 @@ opencv-python = "*"
 pyscreenshot = "*"
 matplotlib = "*"
 boto3 = "*"
+pillow = "*"
+mysql-connector-python = "*"
 
 [requires]
 python_version = "3.7"

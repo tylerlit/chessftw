@@ -5,8 +5,9 @@ import sys
 from s3 import S3_utils
 from sql import mysqlutil as db
 
-if __name__ == "__main__":
-
+def run():
+	print('screenpls.run() started')
+	#if __name__ =='__main__':
 	#random file name
 	fileName = str(uuid.uuid4()) + ".png"
 	savePath = "cv/board/temp/" + fileName

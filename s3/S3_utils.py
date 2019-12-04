@@ -1,10 +1,9 @@
 import boto3
 from botocore.exceptions import ClientError
 
-__AWS_ACCESS_KEY_ID__ = "ENTER HERE"
-__AWS_SECRET_ACCESS_KEY__ = "ENTER HERE"
+__AWS_ACCESS_KEY_ID__ = "AKIAZ7BZF6DKULO2LWCV"
+__AWS_SECRET_ACCESS_KEY__ = "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"
 
-s
 def upload_file(file_name, bucket, object_name=None):
     """Upload a file to an S3 bucket
 
