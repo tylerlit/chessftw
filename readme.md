@@ -1,5 +1,9 @@
 # Run the program
 
+## install dependencies and start up venv shell
+
 `$ pipenv install && pipenv shell`
 
-`$ py cv\board\screenshot.py`
+## make sure you edit main.py to run the desired code. then
+
+`$ python main.py`
