@@ -6,7 +6,6 @@ from s3 import S3_utils
 from sql import mysqlutil as db
 
 def run():
-	print('screenpls.run() started')
 	#if __name__ =='__main__':
 	#random file name
 	fileName = str(uuid.uuid4()) + ".png"
