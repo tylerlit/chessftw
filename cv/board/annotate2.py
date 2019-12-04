@@ -79,28 +79,36 @@ def run():
     # In[2]:
     # get all files in current directory (cv\board\)
     # query database for image paths that have not been annotated
-    __MAX_RETURN_ROWS__ = 1
+    __MAX_RETURN_ROWS__ = 3
     mydb = db.dbConnection()
     mydb.openConnection()
     cursor = mydb.cursor
 
     #call procedure which returns filepaths, and IDs whichare not currently locked and not already annotated
     #also updates the locked flag before returning
-    cursor.callproc('chess.getBoardImages', [__MAX_RETURN_ROWS__])
-    results = cursor.fetchall()
+    cursor.callproc('chess.getBoardImages', [__MAX_RETURN_ROWS__, ])
+    results = cursor.stored_results()
 
-    #use that array to get the actual files from S3
-    for row in results:
-        S3_utils.download_file('chessftw',row[1],'./cv/board/temp/' + row[1][6:])
+    #setting path to telp folder
+    temp_folder_path = './cv/board/temp/'
 
-    files = [f for f in os.listdir('cv/board/temp/') if os.path.isfile(f)]
+    # parse eachresult set, and rows therein
+    for result in results:
+        for row in result:
+            #save the file, naming it with its unique ID
+            S3_utils.download_file('chessftw',row[1],temp_folder_path + str(row[0]) + '.png')
 
-    # get all screenshots from current dir
+    #grab all files from ./cv/board/temp/
+    files = [temp_folder_path + f for f in os.listdir(temp_folder_path) if os.path.isfile(temp_folder_path + f)]
+
+    # get all screenshots from temp dir
     images = [i for i in files if (i[-4:] == ".png")]
-
     # In[3]:
     for i in images:
+        print('now processing ' + i)
 
+        #TYLER I NEED YOU TO SHOW ME WHERE I SEND BACK THE ANNOTATION TO DATABASE
+        #IDK HOW TO WORK YOUR UI
         img = cv2.imread(i, 0)
         og = img.copy()
         size = img.shape
