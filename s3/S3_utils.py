@@ -39,7 +39,6 @@ def download_file(bucket_name, object_name, file_name):
     :param object_name: S3 object name
     :param file_name: what the file will be named locally after downloading
     """
-
     #start up client
     s3_client = boto3.client('s3', 
                                 aws_access_key_id = __AWS_ACCESS_KEY_ID__,
@@ -47,3 +46,22 @@ def download_file(bucket_name, object_name, file_name):
 
     #do the download
     s3_client.download_file(bucket_name, object_name, file_name)
+
+def delete_object(bucket_name, object_name):
+    """Delete an object from an S3 bucket
+
+    :param bucket_name: string
+    :param object_name: string
+    :return: True if the referenced object was deleted, otherwise False
+    """
+
+    # Delete the object
+    s3 = boto3.client('s3',
+                        aws_access_key_id = __AWS_ACCESS_KEY_ID__,
+                        aws_secret_access_key= __AWS_SECRET_ACCESS_KEY__)
+    try:
+        s3.delete_object(Bucket=bucket_name, Key=object_name)
+    except ClientError as e:
+        logging.error(e)
+        return False
+    return True
