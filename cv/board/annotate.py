@@ -35,22 +35,22 @@ class Piece(tk.Frame):
         self.img = tk.Label(self, image=self.image)
         self.img.pack(side="top")
 
-        self.rook = tk.Button(self, text=" rook ", fg="red", command=self.addRook)
+        self.rook = tk.Button(self, text=" rook ", command=self.addRook)
         self.rook.pack(side="left")
 
-        self.bishop = tk.Button(self, text=" bishop ", fg="red", command=self.addBishop)
+        self.bishop = tk.Button(self, text=" bishop ", command=self.addBishop)
         self.bishop.pack(side="left")
 
-        self.knight = tk.Button(self, text=" knight ", fg="red", command=self.addKnight)
+        self.knight = tk.Button(self, text=" knight ", command=self.addKnight)
         self.knight.pack(side="left")
 
-        self.king = tk.Button(self, text=" king ", fg="red", command=self.addKing)
+        self.king = tk.Button(self, text=" king ", command=self.addKing)
         self.king.pack(side="left")
 
-        self.queen = tk.Button(self, text=" queen ", fg="red", command=self.addQueen)
+        self.queen = tk.Button(self, text=" queen ", command=self.addQueen)
         self.queen.pack(side="left")
 
-        self.pawn= tk.Button(self, text=" pawn ", fg="red", command=self.addPawn)
+        self.pawn= tk.Button(self, text=" pawn ", command=self.addPawn)
         self.pawn.pack(side="left")
 
     def say_hi(self):
@@ -93,6 +93,8 @@ class Piece(tk.Frame):
 
     	labels.append(self.label)
 
+    	window = (self.winfo_rootx(), self.winfo_rooty())
+    	print(window)
     	self.master.destroy()
 
 def getBoard(image, og, cropxy):
@@ -151,11 +153,13 @@ def run():
     global temp_folder_path
     global root
     global labels
+    global window
 
     __MAX_RETURN_ROWS__ = 1
     temp_folder_path = './cv/board/temp/'
     root = '../..'
     labels = []
+    window = (0, 0)
 
     # query database for image paths that have not been annotated
     mydb = db.dbConnection()
@@ -202,7 +206,7 @@ def run():
         
 
         # data to upload
-        id = i[-4:]
+        id = i[:-4]
         y1 = dimensions[1][0]
         x1 = dimensions[0][0]
         y2 = dimensions[1][1]
@@ -268,15 +272,24 @@ def run():
                     # annotate pieces
                     root = tk.Tk()
 
-                    w = 800 # width for the Tk root
-                    h = 650 # height for the Tk root
+                    w = 400 # width for the Tk root
+                    h = 250 # height for the Tk root
 
                     ws = root.winfo_screenwidth() # width of the screen
                     hs = root.winfo_screenheight() # height of the screen
 
+                    print(window)
+
 					# calculate x and y coordinates for the Tk root window
-                    x = (ws/2) - (w/2)
-                    y = (hs/2) - (h/2)
+                    if (window == (0, 0)):
+                    	x = (ws/2) - (w/2)
+                    	y = (hs/2) - (h/2)
+                    else:
+                    	x = window[0]
+                    	y = window[1]
+
+
+
                     root.geometry('%dx%d+%d+%d' % (w, h, x, y))
 
                     root = Piece(master=root, img=piece, color=color)
@@ -298,7 +311,6 @@ def run():
             y += unit
 
 
-        print(f"numPieces: {numPieces}")
         # img = img[:unit, :unit]
         
         # img.show(plot)
