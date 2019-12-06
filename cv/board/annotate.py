@@ -4,41 +4,96 @@ import math
 import numpy as np
 import os
 import tkinter as tk
+import uuid
 from . import draw
 from matplotlib import pyplot as plt
-from PIL import Image
+from PIL import Image, ImageTk
 from s3 import S3_utils
 from sql import mysqlutil as db
 
 # UI class for annotating pieces
 class Piece(tk.Frame):
 
-    def __init__(self, master=None, img=None):
+    def __init__(self, master=None, img=None, color=None):
+
         super().__init__(master)
+
         self.master = master
-        self.image = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
-        self.image = Image.fromarray(img)
-        self.image = tk.PhotoImage(self.image)
+
+        self.image = cv2.resize(img, None, fx=3, fy=3)
+        self.image = cv2.cvtColor(self.image, cv2.COLOR_GRAY2RGB)
+        self.image = Image.fromarray(self.image)
+        self.image = ImageTk.PhotoImage(self.image)
+
+        self.color = color
+
         self.pack()
         self.create_widgets()
 
     def create_widgets(self):
-        self.hi_there = tk.Button(self)
 
-        self.hi_there["text"] = "Hello World\n(click me)" 
-        self.hi_there["command"] = self.say_hi
-        self.hi_there.pack(side="top")
+        self.img = tk.Label(self, image=self.image)
+        self.img.pack(side="top")
 
-        self.piece = tk.Label(self, image=self.image)
-        self.piece.pack(side="top")
+        self.rook = tk.Button(self, text=" rook ", fg="red", command=self.addRook)
+        self.rook.pack(side="left")
 
-        self.quit = tk.Button(self, text="QUIT", fg="red",
-                            command=self.master.destroy)
-        self.quit.pack(side="bottom")
+        self.bishop = tk.Button(self, text=" bishop ", fg="red", command=self.addBishop)
+        self.bishop.pack(side="left")
+
+        self.knight = tk.Button(self, text=" knight ", fg="red", command=self.addKnight)
+        self.knight.pack(side="left")
+
+        self.king = tk.Button(self, text=" king ", fg="red", command=self.addKing)
+        self.king.pack(side="left")
+
+        self.queen = tk.Button(self, text=" queen ", fg="red", command=self.addQueen)
+        self.queen.pack(side="left")
+
+        self.pawn= tk.Button(self, text=" pawn ", fg="red", command=self.addPawn)
+        self.pawn.pack(side="left")
 
     def say_hi(self):
         print("hi there, everyone!")
 
+    def addRook(self):
+
+    	self.label = "r"
+    	self.exit()
+
+    def addBishop(self):
+
+    	self.label = "b"
+    	self.exit()
+
+    def addKnight(self):
+
+    	self.label = "n"
+    	self.exit()
+
+    def addKing(self):
+
+    	self.label = "k"
+    	self.exit()
+
+    def addQueen(self):
+
+    	self.label = "q"
+    	self.exit()
+
+    def addPawn(self):
+
+    	self.label = "p"
+    	self.exit()
+
+    def exit(self):
+    	print("exit")
+    	if (self.color == "w"):
+    		self.label = self.label.upper()
+
+    	labels.append(self.label)
+
+    	self.master.destroy()
 
 def getBoard(image, og, cropxy):
 
@@ -95,10 +150,12 @@ def run():
     global __MAX_RETURN_ROWS__
     global temp_folder_path
     global root
+    global labels
 
     __MAX_RETURN_ROWS__ = 1
     temp_folder_path = './cv/board/temp/'
     root = '../..'
+    labels = []
 
     # query database for image paths that have not been annotated
     mydb = db.dbConnection()
@@ -162,11 +219,12 @@ def run():
         # print(round(img.shape[0] / 8))
         # print(img[0,0])
         
-        y = 0
         x = 0
+        y = 0
+        numPieces = 0
 
+        pieces = []
         piece_avg = []
-        endings = [-1]
         
         copy = board.copy()
         unit = round(copy.shape[0] / 8)
@@ -189,25 +247,58 @@ def run():
                 piece_avg.append(avg_color)
 
                 if (avg_color > 198):
-                    # cv2.imshow("test", test)
+
+                    # cv2.imshow("test", piece)
                     # cv2.waitKey(0)
+
+                    file = str(uuid.uuid4()) + ".png"
+
+                    color = round(np.mean(middle))
+
+                    if (color < 100):
+                    	color = "b"
+                    else:
+                    	color = "w"
+
+                    numPieces += 1
+
+                    cv2.imwrite(file, piece)
+
+
                     # annotate pieces
-
                     root = tk.Tk()
-                    app = Piece(master=root, img=piece)
-                    app.mainloop()
 
-                    cv2.imshow("test", piece)
-                    cv2.waitKey(0)
+                    w = 800 # width for the Tk root
+                    h = 650 # height for the Tk root
 
+                    ws = root.winfo_screenwidth() # width of the screen
+                    hs = root.winfo_screenheight() # height of the screen
 
+					# calculate x and y coordinates for the Tk root window
+                    x = (ws/2) - (w/2)
+                    y = (hs/2) - (h/2)
+                    root.geometry('%dx%d+%d+%d' % (w, h, x, y))
 
+                    root = Piece(master=root, img=piece, color=color)
+                    root.mainloop()
+
+                    pieces.append(file)
+
+                    print(pieces)
+                    print(labels)
+
+                    os.remove(file)
+
+                    # cv2.imshow("test", piece)
+                    # cv2.waitKey(0)
 
                 x += unit
 
             x = 0
             y += unit
-  		
+
+
+        print(f"numPieces: {numPieces}")
         # img = img[:unit, :unit]
         
         # img.show(plot)
