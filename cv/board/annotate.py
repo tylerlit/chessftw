@@ -10,22 +10,27 @@ from PIL import Image
 from s3 import S3_utils
 from sql import mysqlutil as db
 
-__MAX_RETURN_ROWS__ = 1
-
 # UI class for annotating pieces
 class Piece(tk.Frame):
+
     def __init__(self, master=None, img=None):
         super().__init__(master)
         self.master = master
+        self.image = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+        self.image = Image.fromarray(img)
+        self.image = tk.PhotoImage(self.image)
         self.pack()
         self.create_widgets()
 
-    def create_widgets(self, image):
+    def create_widgets(self):
         self.hi_there = tk.Button(self)
 
-        self.hi_there["text"] = "Hello World\n(click me)"
+        self.hi_there["text"] = "Hello World\n(click me)" 
         self.hi_there["command"] = self.say_hi
         self.hi_there.pack(side="top")
+
+        self.piece = tk.Label(self, image=self.image)
+        self.piece.pack(side="top")
 
         self.quit = tk.Button(self, text="QUIT", fg="red",
                             command=self.master.destroy)
@@ -34,7 +39,8 @@ class Piece(tk.Frame):
     def say_hi(self):
         print("hi there, everyone!")
 
-def getBoard(image, og, cropxy, size):
+
+def getBoard(image, og, cropxy):
 
     where = []
     img = image.copy() 
@@ -70,6 +76,7 @@ def getBoard(image, og, cropxy, size):
 
     return board, where
 
+
 def transform(image):
 	img = image.copy()
 
@@ -77,7 +84,7 @@ def transform(image):
 
 		for x in range(image.shape[1]):
 
-			if img[y][x] < 50:
+			if img[y][x] < 100:
 				img[y][x] = 255
 
 	return img
@@ -85,41 +92,46 @@ def transform(image):
 
 def run():
 
+    global __MAX_RETURN_ROWS__
+    global temp_folder_path
+    global root
+
+    __MAX_RETURN_ROWS__ = 1
+    temp_folder_path = './cv/board/temp/'
+    root = '../..'
+
     # query database for image paths that have not been annotated
     mydb = db.dbConnection()
     mydb.openConnection()
     cursor = mydb.cursor
-
+    
     # call procedure which returns filepaths, and IDs which are not currently locked and not already annotated
     # also updates the locked flag before returning
     cursor.callproc("chess.getBoardImages", [__MAX_RETURN_ROWS__, ])
     results = cursor.stored_results()
 
-    print(results)
-
-    # setting path to telp folder
-    temp_folder_path = "./cv/board/temp/"
-
     # parse eachresult set, and rows therein
     for result in results:
 
         for row in result:
-
+            print(row)
             # save the file, naming it with its unique ID
             S3_utils.download_file('chessftw', row[1], temp_folder_path + str(row[0]) + '.png')
 
+
     # grab all files from ./cv/board/temp/
     files = [temp_folder_path + f for f in os.listdir(temp_folder_path) if os.path.isfile(temp_folder_path + f)]
-
+    
     # get all screenshots from temp dir
     images = [i for i in files if (i[-4:] == ".png")]
+
+    images = images[:1]
 
     for i in images:
         print("now processing " + i)
 
         img = cv2.imread(i, 0)
         og = img.copy()
-        size = img.shape
 
         # draw cropped image and dimensions of crop relative to original image
         crop, cropxy = draw.draw(i)
@@ -129,7 +141,8 @@ def run():
 
         # crop out background pixels that are not the board
         # also calculate starting x,y and ending x,y of board relative to original image
-        board, dimensions = getBoard(img, og, cropxy, size)
+        board, dimensions = getBoard(img, og, cropxy)
+        
 
         # data to upload
         id = i[-4:]
@@ -153,30 +166,41 @@ def run():
         x = 0
 
         piece_avg = []
+        endings = [-1]
+        
+        copy = board.copy()
+        unit = round(copy.shape[0] / 8)
 
-        unit = math.trunc(board.shape[0] / 8)
 
-        for j in range(8):
+        for k in range(8):
 
-            for k in range(8):
+            for l in range(8):
 
-                piece = board.copy()[y:unit * (j + 1), x:unit * (k + 1)]
+                piece = copy[unit * k:unit * (k+1), unit * l:unit * (l+1)]
                 middle = piece.copy()[round(piece.shape[0] / 4):round(piece.shape[0] * (3/4)), 
                 					round(piece.shape[1] / 4):round(piece.shape[1] * (3/4))]
 
+                # make darker pixels white to isolate pieces
+                # spaces with pieces on the board are now lighter than empty spaces
                 test = transform(middle)
 
-                piece_avg.append(np.mean(test))
-                print(piece_avg)
+                # filter on that
+                avg_color = round(np.mean(test))
+                piece_avg.append(avg_color)
 
-                cv2.imshow("test", test)
-                cv2.waitKey(0)
+                if (avg_color > 198):
+                    # cv2.imshow("test", test)
+                    # cv2.waitKey(0)
+                    # annotate pieces
 
-                cv2.imshow("test", piece)
-                cv2.waitKey(0)
-                # if np.mean(piece):
-                #     continue
-                # else:
+                    root = tk.Tk()
+                    app = Piece(master=root, img=piece)
+                    app.mainloop()
+
+                    cv2.imshow("test", piece)
+                    cv2.waitKey(0)
+
+
 
 
                 x += unit
@@ -188,9 +212,6 @@ def run():
         
         # img.show(plot)
 
-        # # annotate pieces
-        # root = tk.Tk()
-        # app = Piece(master=root, image=img)
-        # app.mainloop()
+
 
         # label = input("r k b q k p: ")
