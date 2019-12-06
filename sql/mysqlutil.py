@@ -35,6 +35,14 @@ class dbConnection:
         except mysql.connector.Error as error:
             sys.exit(" insert Failed to query database {}".format(error))
 
+    def insertMany(self, _queryString, _args=None):
+        try:
+            result = self.cursor.executemany(_queryString, _args)
+            self.connection.commit()
+
+        except mysql.connector.Error as error:
+            sys.exit(" insert Failed to query database {}".format(error))
+
     def select(self, _queryString, _args=None):
         try:
             self.cursor.execute(_queryString, _args)
