@@ -22,7 +22,7 @@ class Annotate:
 		piece = cv2.resize(img, None, fx=3, fy=3)
 
 		# get window
-		w = piece.shape[0] + 50 # get window width + 50 pixels for padding
+		w = piece.shape[0] + 100 # get window width + 50 pixels for padding
 		h = piece.shape[1] + 50 # and height 
 
 		ws = root.winfo_screenwidth() # get width of the screen
