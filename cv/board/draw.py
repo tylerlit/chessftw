@@ -35,22 +35,25 @@ def draw(img):
 
 
 	while True: 
-		# display the image and wait for a keypress 
-		cv2.imshow("image", image) 
-		key = cv2.waitKey(1) & 0xFF
 
-		# press 'r' to reset the window 
+		cv2.imshow("image", image) 
+		key = cv2.waitKey(0) & 0xFF
+
+		# reset the window 
 		if key == ord("r"): 
 			image = clone.copy() 
 
-		# if the 'c' key is pressed, break from the loop 
 		elif key == ord("c"): 
-			break
+			if len(ref_point) == 2: 
+				crop_img = clone[ref_point[0][1]:ref_point[1][1], ref_point[0][0]:ref_point[1][0]]
 
-	if len(ref_point) == 2: 
-		crop_img = clone[ref_point[0][1]:ref_point[1][1], ref_point[0][0]:ref_point[1][0]] 
-		cv2.imshow("crop_img", crop_img) 
-		cv2.waitKey(0) 
+				cv2.imshow("crop_img", crop_img)
+				if cv2.waitKey(0) & 0xFF == ord("c"):
+					break
+				else:
+					cv2.destroyWindow("crop_img")
+					image = clone.copy()
+
 
 	# close all open windows 
 	cv2.destroyAllWindows()
