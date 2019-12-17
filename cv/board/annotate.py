@@ -11,122 +11,114 @@ from PIL import Image, ImageTk
 from s3 import S3_utils
 from sql import mysqlutil as db
 
-class Annotate:
-
-	def __init__(self, img, window, color):
-
-		# create UI container
-		root = tk.Tk()
-
-		# make image larger for user's eyes
-		piece = cv2.resize(img, None, fx=3, fy=3)
-
-		# get window
-		w = piece.shape[0] + 100 # get window width + 50 pixels for padding
-		h = piece.shape[1] + 50 # and height 
-
-		ws = root.winfo_screenwidth() # get width of the screen
-		hs = root.winfo_screenheight() # and height of the screen
-
-		# calculate window placement
-		# new window
-		if (window == (0, 0)):
-
-			x = (ws/2) - (w/2)
-			y = (hs/2) - (h/2)
-
-		# keep old window placement
-		else:
-
-			# align window to position from before
-			# i have no idea how to replace these values with constants
-			x = window[0] - 12
-			y = window[1] - 31
-
-		# set window placement
-		root.geometry('%dx%d+%d+%d' % (w, h, x, y))
-
-
-		# create actual UI elements
-		root = Window(master=root, img=piece, color=color)
-	   
-		# run it
-		root.mainloop()
-
-		self.window = root.window
-		self.label = root.label
-
 class Window(tk.Frame):
 
-	# master: main window reference
-	# img: image of chess piece to be displayed
-	# color: color of chess piece (white/black)
-	# window: location of window relative to screen
-	def __init__(self, master=None, img=None, color=None, location=None):
+	def __init__(self, master=None, pieces=None):
 
 		super().__init__(master)
 
 		self.master = master
-		self.location = location
-		self.color = color
-		self.labels = { 
-						" rook ": "r", " bishop ": "b", " knight ": "n",
-						" king ": "k", " queen ": "q", " pawn ": "p" 
-						}
+		self.pieces = pieces.copy()
 
-		# convert opencv image to PIL (Python Imaging Library?) format
-		self.image = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
-		self.image = Image.fromarray(self.image)
-		self.image = ImageTk.PhotoImage(self.image)
+		self.labels = { " rook ": "r", " bishop ": "b", " knight ": "n",
+						" king ": "k", " queen ": "q", " pawn ": "p" }
+
+		self.annotations = []
+		self.undo = False
 
 		self.pack()
+
+		self.setImage()
 		self.create_widgets()
 
 	# create UI elements
 	def create_widgets(self):
 
-		self.pieceImage = tk.Label(self, image=self.image).pack(side="top")
+		self.pieceImage = tk.Label(self, image=self.image)
+		self.pieceImage.pack()
+
+		quit = tk.Button(self, text=" QUIT ", fg="red", command=self.master.destroy)
+		quit.pack()
+
+		undo = tk.Button(self, text=" UNDO ", command=self.goBack)
+		undo.pack()
 
 		for x, y in self.labels.items():
+
 			button = tk.Button(self, text=x, command=lambda name=y: self.assignLabel(name))
-			button.pack(side="left")\
+			button.pack(side="left")
 
 	def assignLabel(self, label):
 
-		self.label = label
-		self.exit()
+		color = getColor(self.pieces[0])
+		label = label
 
-	def exit(self):
+		if color == 'w':
+			label = label.upper()
 
-		if (self.color == "w"):
-			self.label = self.label.upper()
+		if not self.undo:
+			self.annotations.append(label)
+		else:
+			self.annotations[len(self.annotations) - 1] = label
 
-		# save window for next annotation
-		self.window = (self.winfo_rootx(), self.winfo_rooty())
+		self.getNextPiece()
 
-		self.master.destroy()
+	def goBack(self):
+		print("undo ")
+		self.undo = True
+		self.pieceImage.configure(image=self.lastPiece)
+
+	def getNextPiece(self):
+
+		if len(self.pieces) > 1:
+
+			if not self.undo:
+				self.pieces.pop(0)
+				self.lastPiece = self.image
+				self.setImage()
+
+			self.pieceImage.configure(image=self.image)
+			self.undo = False
+		else:
+
+			self.master.destroy()
+
+	# convert opencv image to PIL (Python Imaging Library?) format
+	def setImage(self):
+
+		self.image = cv2.resize(self.pieces[0], None, fx=3, fy=3)
+		self.image = cv2.cvtColor(self.image, cv2.COLOR_GRAY2RGB)
+		self.image = Image.fromarray(self.image)
+		self.image = ImageTk.PhotoImage(self.image)
 
 def labelPieces(pieces):
 
 	labels = []
 
-	# keep location of window on screen to keep UI spawn consistent
-	window = (0, 0)
+	# create UI container
+	root = tk.Tk()
 
-	for piece in pieces:
+	# get window
+	w = (pieces[0].shape[0] * 3) + 100 # get window width + 50 pixels for padding
+	h = (pieces[0].shape[1] * 3) + 100 # and height 
 
-		image = piece.copy()
+	ws = root.winfo_screenwidth() # get width of the screen
+	hs = root.winfo_screenheight() # and height of the screen
 
-		# get color
-		color = getColor(piece)
+	# calculate window placement
+	x = (ws/2) - (w/2)
+	y = (hs/2) - (h/2)
 
-		result = Annotate(image, window, color)
+	# set window placement
+	root.geometry('%dx%d+%d+%d' % (w, h, x, y))
 
-		window = result.window
-		labels.append(result.label)
-		print(result.label)
+	# create actual UI elements
+	root = Window(master=root, pieces=pieces)
 
-	return labels
+	# run it
+	root.mainloop()
+
+	return root.annotations
 
 def getColor(piece):
 
@@ -137,14 +129,15 @@ def getColor(piece):
 	# filter color on average lightness
 	color = round(np.mean(middle))
 
-	if (color < 100):
+	if color < 100:
 		color = "b"
 	else:
 		color = "w"
 
 	return color
 
-def getMiddle(piece):  
+def getMiddle(piece):
+
 	return piece[round(piece.shape[0] / 4):round(piece.shape[0] * (3/4)), 
 				round(piece.shape[1] / 4):round(piece.shape[1] * (3/4))]
 
@@ -221,7 +214,6 @@ def getBoard(screenshot, og, cropxy):
 
 	return board, where
 
-
 def transform(image):
 
 	img = image.copy()
@@ -234,7 +226,6 @@ def transform(image):
 				img[y][x] = 255
 
 	return img
-
 
 def run():
 
@@ -310,6 +301,8 @@ def run():
 			file = str(uuid.uuid4()) + ".png"
 
 			files.append(file)
+
+		# files = files(:labels.length)
 
 		print(files)
 		print(labels)

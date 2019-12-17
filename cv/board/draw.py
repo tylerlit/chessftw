@@ -43,6 +43,9 @@ def draw(img):
 		if key == ord("r"): 
 			image = clone.copy() 
 
+		if key == ord("q"):
+			raise SystemExit
+
 		elif key == ord("c"): 
 			if len(ref_point) == 2: 
 				crop_img = clone[ref_point[0][1]:ref_point[1][1], ref_point[0][0]:ref_point[1][0]]
